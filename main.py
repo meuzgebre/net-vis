@@ -10,53 +10,49 @@ import pygeoip
 GEOLITE_DB  = "GeoLiteCity.dat"
 TRAFFIC     = "traffic.pcap"
 
-# Convert IP to geo
+# Convert IP to geo and generate KML
 def retkml(dst, src):
-    dst = geo_ip.record_by_name(dst)
-    src = geo_ip.record_by_name(src)
-    
-    try:
-        dst_long = dst["longitude"]
-        dst_lat = dst["latitude"]
-        
-        src_long = src["longitude"]
-        src_lat = src["latitude"]
-        
-        
-        kml = (
-            f"""
-            <Placemark>
-            <name>%s</name>
-            <extrude>1</extrude>
-            <styleUrlUrl>#My Site</styleUrl>
-            <LineString>
-            <coordinate>%6f,%6f\n%6f,%6f</coordinate>
-            </LineString>
-            </Placemark>
-            """
-        )%(dst, dst_long, dst_lat, src, src_long, src_lat)
-        
-        print(kml)
-        return kml
-    except:
-        pass
-  
- 
+    dst_record = geo_ip.record_by_name(dst)
+    src_record = geo_ip.record_by_name("154.20.72.95")
+
+    # print(f"debug: {type(dst_record)}")
+
+    # Ignore NoneType for Private IPv4
+    if (dst_record != None ):
+
+        try:
+            dst_long, dst_lat = dst_record["longitude"], dst_record["latitude"]
+            src_long, src_lat = src_record["longitude"], src_record["latitude"]
+
+            kml = f"{dst_long},{dst_lat} \n {src_long},{src_lat} "
+            
+            # print (dst_long, dst_lat)
+            return kml
+            # return dst_long, dst_lat
+        except e:
+            print(f"Error: {e}")
+            return ""
+    else:
+        return ""
+
+
+# Read packets from pcap file and generate KML
 def plot_ips(pcap):
     plt = ""
-    for (ts, buff) in pcap:
+    for ts, buff in pcap:
         eth = dpkt.ethernet.Ethernet(buff)
         ip = eth.data
-        src = socket.inet_ntoa(ip.src)
-        dst = socket.inet_ntoa(ip.dst)
-        
-        kml = retkml(dst, src)
-        
-        # plt += kml
-        # print(dst, src)
-        
-    return plt 
-  
+        # Check if the IP packet is IPv4
+        if isinstance(ip, dpkt.ip.IP):
+            src = socket.inet_ntoa(ip.src)
+            dst = socket.inet_ntoa(ip.dst)
+
+            kml = retkml(dst, src)
+
+            # print (f"debug: {kml}, {dst}, {src}")
+            plt += str(kml)
+    return plt
+
 
 # Init the Geolocaion Database
 geo_ip = pygeoip.GeoIP(GEOLITE_DB)
@@ -72,17 +68,22 @@ def main():
     kml_template = f"""
     <?xml version="1.0" encoding="UTF-8"?>
     <kml xmlns="http://www.opengis.net/kml/2.2">
-    <Style id="yellowLineGreenPoly">
-      <LineStyle>
-        <color>7f00ffff</color>
-        <width>1.7</width>
-      </LineStyle>
-      <PolyStyle>
-        <color>7f00ff00</color>
-      </PolyStyle>
-    </Style>
-    {plot_ips(pcap)}
-    </Document>
+      <Style id="yellowLineGreenPoly">
+        <LineStyle>
+          <color>7f00ffff</color>
+          <width>1.7</width>
+        </LineStyle>
+        <PolyStyle>
+          <color>7f00ff00</color>
+        </PolyStyle>
+      </Style>
+    <Placemark>
+        <LineString>
+          <coordinates>
+            {plot_ips(pcap)}
+          </coordinates>
+        </LineString>
+      </Placemark>
     </kml>
     """
 
