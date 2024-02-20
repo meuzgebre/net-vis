@@ -146,8 +146,8 @@ def generate_co(loc_pairs):
     kml_template += "\t<Document>\n"
     kml_template += "\t\t<Style id='yellowLineGreenPoly'>\n"
     kml_template += "\t\t\t<LineStyle>\n"
-    kml_template += "\t\t\t\t<color>7f00ffff</color>\n"
-    kml_template += "\t\t\t\t<width>1.7</width>\n"
+    kml_template += "\t\t\t\t<color>ff800080</color>\n"
+    kml_template += "\t\t\t\t<width>1.2</width>\n"
     kml_template += "\t\t\t</LineStyle>\n"
     kml_template += "\t\t\t<PolyStyle>\n"
     kml_template += "\t\t\t\t<color>7f00ff00</color>\n"
@@ -195,9 +195,9 @@ def map_ntk(kml_template):
     
     # Plto Map
     # Create a new figure
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(15, 10))
 
-    m = Basemap(projection='mill', llcrnrlat=min(lats)-5, urcrnrlat=max(lats)+5, llcrnrlon=min(longs)-5, urcrnrlon=max(longs)+5)
+    m = Basemap(projection='cyl', llcrnrlat=-90, urcrnrlat=90, llcrnrlon=-180, urcrnrlon=180)
     m.drawcoastlines()
     m.drawcountries()
     m.drawmeridians(range(-180, 181, 30), labels=[0, 0, 0, 1])
